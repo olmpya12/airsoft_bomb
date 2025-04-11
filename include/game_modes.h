@@ -2,6 +2,12 @@
 #define GAME_MODES_H
 #include "config.h"
 #include <Arduino.h> // Add this to get millis()
+#include <display_manager.h>
+#include <sound_manager.h>
+
+class DisplayManager;
+class SoundManager;
+
 
 class GameBase {
 public:
@@ -15,17 +21,22 @@ public:
   
   // Add handleButton method to base class
   virtual void handleButton(char button) = 0;
+  virtual void setManagers(DisplayManager* d, SoundManager* s) {}
 };
 
 class DefuseMode : public GameBase {
 private:
+  DefuseState state;
   unsigned long startTime;
   int timeLimit;  // Time limit in seconds
   bool armed;
-  int defuseCode[4];
+  int armingCode[4] = {1, 2, 3, 4};
+  int defuseCode[4] = {5, 6, 7, 8};
   int inputCode[4];
   int codePosition;
-  
+  DisplayManager* display;
+  SoundManager* sound;
+
 public:
   DefuseMode();
   ~DefuseMode() override = default; 
@@ -36,14 +47,9 @@ public:
   void reset() override;
   void setTimeLimit(int seconds);
   void handleButton(char button) override;
+  void setManagers(DisplayManager* d, SoundManager* s);
 };
 
-// Game ownership states for domination mode
-enum PointOwnership {
-  NEUTRAL,
-  RED_TEAM,
-  GREEN_TEAM
-};
 
 class DominationMode : public GameBase {
 private:
@@ -66,6 +72,8 @@ private:
   
   bool setupComplete;           // Indicates if setup is complete
 
+  DisplayManager* display;
+  SoundManager* sound;
 public:
   GameState state;              // Current game state
   
@@ -103,6 +111,7 @@ public:
   int getGameTime();
   int getElapsedTime();
   PointOwnership getCapturingTeam();
+  void setManagers(DisplayManager* d, SoundManager* s);
 };
 
 #endif // GAME_MODES_H

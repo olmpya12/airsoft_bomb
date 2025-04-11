@@ -12,10 +12,10 @@
 #define D7 13  // GPIO13
 #define D8 15  // GPIO15
 #define D9 3   // GPIO3 (RX)
-#define D10 1  // GPIO1 (TX)
 #define RX 3   // GPIO3
 #define TX 1   // GPIO1
 #define SD3 10 // GPIO10
+#define SD2 9 // GPIO10
 #endif
 
 // Pin definitions for ESP8266
@@ -23,34 +23,41 @@
 #define PIN_BUTTON_MENU D3     // Button for menu navigation 
 #define PIN_BUTTON_CONFIRM D4  // Button for confirming selections
 #define PIN_BUZZER D0          // Buzzer for alarms and feedback
-#define PIN_LED_RED D1         // Red LED
-#define PIN_LED_GREEN D2       // Green LED
 #define PIN_VOLTAGE_SENSOR A0  // Only analog pin on ESP8266
 
-// Keypad pin connections for ESP8266
-#define PIN_ROW1 D5   
-#define PIN_ROW2 D6   
-#define PIN_ROW3 D7   
-#define PIN_ROW4 D8   
-#define PIN_COL1 RX   // GPIO3
-#define PIN_COL2 TX   // GPIO1
-#define PIN_COL3 D9   // GPIO3/RX (if available) or another GPIO
+// I2C pins for ESP8266 (for I2C expander)
+#define I2C_SDA D2  // GPIO4 - Default I2C SDA pin
+#define I2C_SCL D1  // GPIO5 - Default I2C SCL pin
+
+// I2C expander addresses (adjust according to your specific expander)
+#define PCF8574_ADDRESS 0x20  // Default address for PCF8574, adjust as needed
+                               // PCF8574A typically uses 0x38
+                               // MCP23017 typically uses 0x20
+// Keypad connections to PCF8574 expander
+// P0-P7 represent the 8 pins on the PCF8574
+#define PIN_ROW1 0  // P0 on PIN8574
+#define PIN_ROW2 1  // P1 on PIN8574
+#define PIN_ROW3 2  // P2 on PIN8574
+#define PIN_ROW4 3  // P3 on PIN8574
+#define PIN_COL1 4  // P4 on PIN8574
+#define PIN_COL2 5  // P5 on PIN8574
+#define PIN_COL3 6  // P6 on PIN8574
 
 // DFPlayer Mini pins
 // Using software serial with ESP8266
-#define DFPLAYER_RX_PIN D10  // Connect to TX pin on DFPlayer Mini
+#define DFPLAYER_RX_PIN TX  // Connect to TX pin on DFPlayer Mini
 #define DFPLAYER_TX_PIN SD3  // Connect to RX pin on DFPlayer Mini
 
 // Hardware SPI pins for Arduino UNO are fixed:
 // MOSI - Pin 11 (fixed)
 // SCK  - Pin 13 (fixed)
-// SS   - Pin 10 (fixed, but can be ignored if not using multiple devices)
 
-#define OLED_MOSI  13   //D7
-#define OLED_CLK   14   //D5
-#define OLED_DC    2  // D2  
-#define OLED_CS    15  //D8
-#define OLED_RESET 16  //D0
+#define OLED_MOSI  D7   //D7
+#define OLED_CLK   D5   //D5
+#define OLED_DC    D6  // D2  
+#define OLED_CS    D8  //D8
+#define OLED_RESET D3  //D0
+
 
 // Display settings
 #define SCREEN_WIDTH 128      // OLED display width, in pixels
@@ -60,6 +67,18 @@
 enum GameMode {
   DEFUSE_MODE = 0,     // Defuse the bomb before time runs out
   DOMINATION_MODE = 1  // Capture and hold the point
+};
+
+// Game ownership states for domination mode
+enum PointOwnership {
+  NEUTRAL,
+  RED_TEAM,
+  GREEN_TEAM
+};
+
+enum DefuseState {
+  WAITING_TO_ARM,
+  ARMED
 };
 
 // Game state definitions
@@ -98,8 +117,8 @@ enum SoundType {
 #define PIN_MODE_SWITCH 27  // GPIO pin for game mode selection
 
 // Team buttons for domination mode
-#define PIN_RED_BUTTON D1   // Red team button
-#define PIN_GREEN_BUTTON D2 // Green team button
+#define PIN_RED_BUTTON RX   // Red team button
+#define PIN_GREEN_BUTTON D0 // Green team button
 
 // Domination game constants
 #define DOM_DEFAULT_TIME 1       // Default time in minutes

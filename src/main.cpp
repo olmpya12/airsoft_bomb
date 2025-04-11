@@ -52,12 +52,16 @@ void setup() {
   }
   Serial.println("Display initialized successfully");
   
+  // Initialize I2C for keypad
+  Wire.begin();
+  keypad.init();
+  Serial.println("Keypad initialized");
    
   // Initialize mode switch and team buttons
   pinMode(PIN_MODE_SWITCH, INPUT_PULLUP);
   pinMode(PIN_RED_BUTTON, INPUT_PULLUP);
   pinMode(PIN_GREEN_BUTTON, INPUT_PULLUP);
-  
+  Serial.println("Display 2 initialized successfully");
   // Initialize managers
   settings.load();
   // Skip sound initialization for now
@@ -65,8 +69,9 @@ void setup() {
   display.showWelcome();
   
   // Determine initial game mode from switch
-  currentMode = digitalRead(PIN_MODE_SWITCH) ? DEFUSE_MODE : DOMINATION_MODE;
-  
+  // currentMode = digitalRead(PIN_MODE_SWITCH) ? DEFUSE_MODE : DOMINATION_MODE;
+  currentMode = DOMINATION_MODE;
+
   // Initialize the appropriate game based on switch position
   if (currentMode == DEFUSE_MODE) {
     activeGame = &defuseGame;
@@ -75,46 +80,18 @@ void setup() {
     activeGame = &dominationGame;
     Serial.println("Starting in Domination Mode");
   }
-  
+    
   activeGame->init();
+  activeGame->setManagers(&display, &sound);
   display.showGameMode(currentMode);
   delay(2000);
-  activeGame->handleButton('#'); // Start the game
   Serial.println("Airsoft Bomb System Initialized");
 }
 
 void loop() {
  
-  
-  // Check if game mode switch has changed
-  GameMode switchMode = digitalRead(PIN_MODE_SWITCH) ? DEFUSE_MODE : DOMINATION_MODE;
-
-  
-  if (switchMode != currentMode) {
-    // Mode has changed, reset and initialize the new mode
-    currentMode = switchMode;
-    
-    if (currentMode == DEFUSE_MODE) {
-      activeGame = &defuseGame;
-      Serial.println("Switched to Defuse Mode");
-    } else {
-      activeGame = &dominationGame;
-      Serial.println("Switched to Domination Mode");
-    }
-    
-
-    activeGame->init();
-
-    
-
-    display.showGameMode(currentMode);
-    
-    delay(1000);
-  }
-  
-  // Handle keypad input
-
-  char key = 0;
+  // Handle keypad input - FIXED: Actually call the scanKeypad function
+  char key = keypad.scanKeypad();
 
   
   // If a key is pressed from the keypad
@@ -124,8 +101,6 @@ void loop() {
     // Pass the key to the active game
     activeGame->handleButton(key);
   }
-  
-
   
   // Read team buttons for domination mode
   if (currentMode == DOMINATION_MODE) {
@@ -183,36 +158,5 @@ void loop() {
   // Update the active game state
 
   activeGame->update();
-
-  
-  if (currentMode == DEFUSE_MODE) {
-    // Update defuse mode display
-    // ...
-  } else {
-    // Update domination mode display
-    DominationMode* domGame = (DominationMode*)activeGame;
-    
-    if (domGame->state == SETUP) {
-      // Show setup screen with time selection
-      display.showDominationSetup(domGame->getGameTime() / 60);
-    } else if (domGame->state == RUNNING) {
-      // Show game progress
-      int remainingTime = domGame->getGameTime() - domGame->getElapsedTime();
-      
-      // Ensure you have a getter for capture progress
-      int captureProgress = domGame->getCaptureProgress();
-      PointOwnership owner = domGame->getCurrentOwner();
-      
-      display.showDominationScreen(domGame->getRedScore(), domGame->getGreenScore(), 
-                                 captureProgress, owner, remainingTime);
-    } else if (domGame->state == GAME_OVER) {
-      // Show game over with winner
-      PointOwnership winner = (domGame->getRedScore() > domGame->getGreenScore()) ? 
-                            RED_TEAM : 
-                            (domGame->getGreenScore() > domGame->getRedScore()) ? GREEN_TEAM : NEUTRAL;
-      display.showDominationGameOver(winner, domGame->getRedScore(), domGame->getGreenScore());
-    }
-  }
-  
   delay(10); // Small delay to prevent CPU hogging
 }

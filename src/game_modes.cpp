@@ -1,5 +1,7 @@
 #include "game_modes.h"
 #include <Arduino.h> // Add this to get millis()
+#include <display_manager.h>
+#include <sound_manager.h>
 
 // GameBase implementation
 GameBase::GameBase()
@@ -18,14 +20,94 @@ void DefuseMode::init()
     reset();
 }
 
-void DefuseMode::update()
-{
-    // Update logic for defuse mode
+void DefuseMode::update() {
+    String codeStr = "";
+    for (int i = 0; i < codePosition; i++) {
+        codeStr += String(inputCode[i]);
+    }
+
+    if (state == WAITING_TO_ARM) {
+        // Show DISARMED screen with code input
+        display->showDefuseScreen(timeLimit, false, codeStr);
+        return;
+    }
+
+    // If ARMED
+    unsigned long elapsed = (millis() - startTime) / 1000;
+    int remaining = timeLimit - elapsed;
+
+    if (remaining <= 0) {
+        // Time's up – explosion
+        sound->play(SOUND_EXPLOSION);
+        display->showGameOver(false);  // Mission failed
+        delay(5000);
+        reset();
+        return;
+    }
+
+    display->showDefuseScreen(remaining, true, codeStr);
 }
 
-void DefuseMode::handleInput(int button)
-{
-    // Handle input logic for defuse mode
+void DefuseMode::setManagers(DisplayManager* d, SoundManager* s) {
+    display = d;
+    sound = s;
+}
+
+void DefuseMode::handleInput(int button) {
+    if (button >= 0 && button <= 9) {
+        if (codePosition < 4) {
+            inputCode[codePosition++] = button;
+            sound->play(SOUND_BUTTON_PRESS);
+        }
+        return;
+    }
+
+    if (button == 10) { // * = clear
+        codePosition = 0;
+        sound->play(SOUND_BEEP);
+        return;
+    }
+
+    if (button == 11) { // # = submit
+        bool correct = true;
+
+        if (codePosition < 4) {
+            sound->play(SOUND_ERROR);
+            Serial.println("Code too short.");
+            codePosition = 0;
+            return;
+        }
+
+        // Compare code
+        for (int i = 0; i < 4; i++) {
+            int expected = (state == WAITING_TO_ARM) ? armingCode[i] : defuseCode[i];
+            if (inputCode[i] != expected) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            if (state == WAITING_TO_ARM) {
+                state = ARMED;
+                startTime = millis();
+                sound->play(SOUND_GAME_START);
+                Serial.println("Bomb armed!");
+            } else if (state == ARMED) {
+                state = WAITING_TO_ARM;
+                sound->play(SOUND_DEFUSED);
+                display->showGameOver(true);  // Victory
+                Serial.println("Bomb defused!");
+                delay(5000);
+                reset();
+            }
+        } else {
+            sound->play(SOUND_ERROR);
+            Serial.println("Incorrect code!");
+        }
+
+        codePosition = 0;
+    }
 }
 
 bool DefuseMode::isGameOver()
@@ -34,19 +116,11 @@ bool DefuseMode::isGameOver()
     return false;
 }
 
-void DefuseMode::reset()
-{
+void DefuseMode::reset() {
     startTime = 0;
-    timeLimit = 300; // Default 5 minutes
-    armed = false;
+    timeLimit = 300; // 5 min default
     codePosition = 0;
-
-    // Initialize default defuse code (e.g., 1234)
-    for (int i = 0; i < 4; i++)
-    {
-        defuseCode[i] = i + 1;
-        inputCode[i] = 0;
-    }
+    state = WAITING_TO_ARM;
 }
 
 void DefuseMode::setTimeLimit(int seconds)
@@ -84,12 +158,15 @@ void DominationMode::init()
     state = SETUP;
     setupComplete = false;
 }
-
+void DominationMode::setManagers(DisplayManager* d, SoundManager* s) {
+    display = d;
+    sound = s;
+}
 void DominationMode::update()
 {
     if (state == SETUP)
     {
-        return; // In setup mode, nothing to update
+        display->showDominationSetup(getGameTime() / 60);
     }
 
     if (state == RUNNING)
@@ -99,18 +176,26 @@ void DominationMode::update()
         // Update elapsed time
         elapsedTime = (currentTime - startTime) / 1000; // Convert to seconds
 
-        // CHANGE THIS SECTION: Always update capture, don't check captureStartTime here
-        updateCapture(); // Always check for capture updates
-
-        // Update team scores based on point ownership
+        updateCapture();
         updateScores();
 
-        // Check if game is over
+        int remainingTime = gameTime - elapsedTime;
+        int captureProgress = getCaptureProgress();
+        PointOwnership owner = getCurrentOwner();
+
+        display->showDominationScreen(redScore, greenScore, captureProgress, owner, remainingTime);
+
         if (elapsedTime >= gameTime)
         {
             state = GAME_OVER;
             return;
         }
+    }
+    else if (state == GAME_OVER)
+    {
+        PointOwnership winner = (redScore > greenScore) ? RED_TEAM :
+                                (greenScore > redScore) ? GREEN_TEAM : NEUTRAL;
+        display->showDominationGameOver(winner, redScore, greenScore);
     }
 }
 

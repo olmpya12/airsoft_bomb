@@ -147,8 +147,10 @@ void DisplayManager::showCountdown(int timeRemaining) {
     // Format time as MM:SS
     int minutes = timeRemaining / 60;
     int seconds = timeRemaining % 60;
-    char timeStr[6];
-    sprintf(timeStr, "%02d:%02d", minutes, seconds);
+    minutes = constrain(minutes, 0, 99);
+    seconds = constrain(seconds, 0, 59);
+    char timeStr[9];
+    snprintf(timeStr, sizeof(timeStr), "%02d:%02d", minutes, seconds);
     
     showCenteredText("COUNTDOWN", 2, 1);
     display.drawLine(0, 12, SCREEN_WIDTH, 12, SH110X_WHITE);
@@ -167,8 +169,10 @@ void DisplayManager::showDefuseScreen(int timeRemaining, bool armed, const Strin
     // Format time as MM:SS
     int minutes = timeRemaining / 60;
     int seconds = timeRemaining % 60;
-    char timeStr[6];
-    sprintf(timeStr, "%02d:%02d", minutes, seconds);
+    minutes = constrain(minutes, 0, 99);
+    seconds = constrain(seconds, 0, 59);
+    char timeStr[9];
+    snprintf(timeStr, sizeof(timeStr), "%02d:%02d", minutes, seconds);
     
     // Show status at top
     if (armed) {
@@ -358,8 +362,10 @@ void DisplayManager::showDominationScreen(int redScore, int greenScore, int capt
   // Show timer at top
   int minutes = remainingTime / 60;
   int seconds = remainingTime % 60;
+  minutes = constrain(minutes, 0, 99);
+  seconds = constrain(seconds, 0, 59);
   char timeStr[10];
-  sprintf(timeStr, "%02d:%02d", minutes, seconds);
+  snprintf(timeStr, sizeof(timeStr), "%02d:%02d", minutes, seconds);
   
   display.setTextSize(2);
   display.setCursor(30, 0);
