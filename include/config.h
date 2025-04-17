@@ -11,7 +11,7 @@
 #define D6 12  // GPIO12
 #define D7 13  // GPIO13
 #define D8 15  // GPIO15
-#define D9 3   // GPIO3 (RX)
+#define D9 3   // GPIO3
 #define RX 3   // GPIO3
 #define TX 1   // GPIO1
 #define SD3 10 // GPIO10
@@ -20,14 +20,9 @@
 
 // Pin definitions for ESP8266
 // Using NodeMCU/ESP8266 GPIO numbers instead of Arduino pin numbers
-#define PIN_BUTTON_MENU D3     // Button for menu navigation 
-#define PIN_BUTTON_CONFIRM D4  // Button for confirming selections
-#define PIN_BUZZER D0          // Buzzer for alarms and feedback
 #define PIN_VOLTAGE_SENSOR A0  // Only analog pin on ESP8266
 
-// I2C pins for ESP8266 (for I2C expander)
-#define I2C_SDA D2  // GPIO4 - Default I2C SDA pin
-#define I2C_SCL D1  // GPIO5 - Default I2C SCL pin
+
 
 // I2C expander addresses (adjust according to your specific expander)
 #define PCF8574_ADDRESS 0x20  // Default address for PCF8574, adjust as needed
@@ -45,18 +40,12 @@
 
 // DFPlayer Mini pins
 // Using software serial with ESP8266
-#define DFPLAYER_RX_PIN TX  // Connect to TX pin on DFPlayer Mini
-#define DFPLAYER_TX_PIN SD3  // Connect to RX pin on DFPlayer Mini
+#define DFPLAYER_RX_PIN D2  // Connect to TX pin on DFPlayer Mini
+#define DFPLAYER_TX_PIN D1  // Connect to RX pin on DFPlayer Mini
 
 // Hardware SPI pins for Arduino UNO are fixed:
 // MOSI - Pin 11 (fixed)
 // SCK  - Pin 13 (fixed)
-
-#define OLED_MOSI  D7   //D7
-#define OLED_CLK   D5   //D5
-#define OLED_DC    D6  // D2  
-#define OLED_CS    D8  //D8
-#define OLED_RESET D3  //D0
 
 
 // Display settings
@@ -94,14 +83,15 @@ enum GameState {
 
 // Sound types
 enum SoundType {
-  SOUND_STARTUP = 0,
-  SOUND_GAME_START = 1,
-  SOUND_EXPLOSION = 2,
-  SOUND_DEFUSED = 3,
+  SOUND_PLANTED = 1,
+  SOUND_DEFUSED = 2,
+  SOUND_TIME = 3,
   SOUND_BEEP = 4,
-  SOUND_BUTTON_PRESS = 5,
-  SOUND_ERROR = 6,
-  SOUND_WARNING = 7,
+  SOUND_GAME_START = 5,
+  SOUND_EXPLOSION = 6,
+  SOUND_BUTTON_PRESS = 7,
+  SOUND_ERROR = 8,
+  SOUND_WARNING = 9,
   // Add more as needed
 };
 
@@ -117,8 +107,8 @@ enum SoundType {
 #define PIN_MODE_SWITCH 27  // GPIO pin for game mode selection
 
 // Team buttons for domination mode
-#define PIN_RED_BUTTON RX   // Red team button
-#define PIN_GREEN_BUTTON D0 // Green team button
+#define PIN_RED_BUTTON D5   // Red team button
+#define PIN_GREEN_BUTTON D8 // Green team button
 
 // Domination game constants
 #define DOM_DEFAULT_TIME 1       // Default time in minutes

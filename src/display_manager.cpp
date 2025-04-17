@@ -2,25 +2,17 @@
 #include <Arduino.h>
 #include "game_modes.h"
 
-// Constructor for SPI OLED display
 DisplayManager::DisplayManager() : 
-    // Use hardware SPI for Arduino Uno (much more efficient)
-    display(SCREEN_WIDTH, SCREEN_HEIGHT, 
-            OLED_MOSI,OLED_CLK, OLED_DC, 
-            OLED_RESET, OLED_CS),
-    initialized(false) {}
 
-// Make sure you're passing OLED_RESET to the constructor before CS
+    display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1), initialized(false) {}
+
 bool DisplayManager::init() {
-    Serial.println("Initializing SH110X display...");
     
     // SPI SSD1306 initialization - Add debug output
-    if(!display.begin(0,true)) {
-        Serial.println(F("SSD1306 allocation failed"));
+    if(!display.begin(0x3C)){
         return false;
     }
     
-    Serial.println("SSD1306 display initialized successfully!");
     initialized = true;
     display.clearDisplay();
     display.setTextColor(SH110X_WHITE);

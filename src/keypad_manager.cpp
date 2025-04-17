@@ -50,9 +50,6 @@ uint8_t KeypadManager::digitalRead_I2C(uint8_t pin) {
 void KeypadManager::init() {
  
     
-    // Initialize I2C if not already done
-    Wire.begin();
-    
     // Initial state - all pins HIGH (inputs with pull-ups)
     writePort(0xFF);
    

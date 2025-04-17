@@ -39,39 +39,38 @@ bool lastGreenButtonState = false;
 void setup() {
   Serial.begin(115200);
   Serial.println("\nAirsoft Bomb");
-  delay(1000); // Give serial a moment to initialize
   
-  // Initialize SPI for the display
-  SPI.begin();
-  Serial.println("SPI initialized");
-  
+  Wire.begin(D6,D7);
+
+  if (!sound.init())
+  {  
+    ESP.restart();
+  }
   // Test OLED display first before anything else
   Serial.println("Testing display initialization...");
   if (!display.init()) {
     Serial.println("Display initialization failed!");
   }
-  Serial.println("Display initialized successfully");
-  
+  else{
+    Serial.println("Display initialized successfully");
+  }
   // Initialize I2C for keypad
-  Wire.begin();
   keypad.init();
   Serial.println("Keypad initialized");
    
   // Initialize mode switch and team buttons
   pinMode(PIN_MODE_SWITCH, INPUT_PULLUP);
-  pinMode(PIN_RED_BUTTON, INPUT_PULLUP);
-  pinMode(PIN_GREEN_BUTTON, INPUT_PULLUP);
   Serial.println("Display 2 initialized successfully");
+  
   // Initialize managers
   settings.load();
   // Skip sound initialization for now
-  // sound.init();
   display.showWelcome();
   
   // Determine initial game mode from switch
   // currentMode = digitalRead(PIN_MODE_SWITCH) ? DEFUSE_MODE : DOMINATION_MODE;
-  currentMode = DOMINATION_MODE;
-
+  currentMode = DEFUSE_MODE;
+  
   // Initialize the appropriate game based on switch position
   if (currentMode == DEFUSE_MODE) {
     activeGame = &defuseGame;
@@ -80,12 +79,15 @@ void setup() {
     activeGame = &dominationGame;
     Serial.println("Starting in Domination Mode");
   }
-    
+  
   activeGame->init();
   activeGame->setManagers(&display, &sound);
+  
   display.showGameMode(currentMode);
   delay(2000);
   Serial.println("Airsoft Bomb System Initialized");
+  pinMode(PIN_RED_BUTTON, INPUT_PULLUP);
+  pinMode(PIN_GREEN_BUTTON, INPUT_PULLUP);
 }
 
 void loop() {
@@ -96,6 +98,7 @@ void loop() {
   
   // If a key is pressed from the keypad
   if (key != 0) {
+    sound.play(SOUND_BEEP);
     Serial.print("Key pressed: ");
     Serial.println(key);
     // Pass the key to the active game

@@ -2,7 +2,7 @@
 #define DISPLAY_MANAGER_H
 
 #include <Arduino.h>
-#include <SPI.h>
+#include <Wire.h> 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include "config.h"
@@ -10,7 +10,7 @@
 
 class DisplayManager {
 private:
-    Adafruit_SH1106G display;
+    Adafruit_SH1106G display;  // SH1106 I2C driver
     bool initialized;
 
 public:

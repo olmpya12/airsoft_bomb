@@ -21,31 +21,45 @@ void DefuseMode::init()
 }
 
 void DefuseMode::update() {
-    String codeStr = "";
-    for (int i = 0; i < codePosition; i++) {
-        codeStr += String(inputCode[i]);
-    }
-
     if (state == WAITING_TO_ARM) {
         // Show DISARMED screen with code input
+        String codeStr = "";
+        for (int i = 0; i < codePosition; i++) {
+            codeStr += String(inputCode[i]);
+        }
         display->showDefuseScreen(timeLimit, false, codeStr);
         return;
     }
 
     // If ARMED
-    unsigned long elapsed = (millis() - startTime) / 1000;
+    unsigned long now = millis();
+    unsigned long elapsed = (now - startTime) / 1000;
     int remaining = timeLimit - elapsed;
 
+    // Explosion triggered
     if (remaining <= 0) {
-        // Time's up – explosion
-        sound->play(SOUND_EXPLOSION);
+        sound->play(SOUND_EXPLOSION);  // Make sure you mapped this to 0002.mp3 or similar
         display->showGameOver(false);  // Mission failed
         delay(5000);
         reset();
         return;
     }
 
+    // Show countdown + code
+    String codeStr = "";
+    for (int i = 0; i < codePosition; i++) {
+        codeStr += String(inputCode[i]);
+    }
     display->showDefuseScreen(remaining, true, codeStr);
+
+    // Calculate dynamic beep interval: faster when closer to zero
+    int interval = map(remaining, 0, timeLimit, 1000, 4000); // From 1000ms (urgent) to 4000ms (chill)
+
+    // Play beep if interval passed
+    if (now - lastBeepTime >= interval) {
+        sound->play(SOUND_TIME);  // 0003.mp3
+        lastBeepTime = now;
+    }
 }
 
 void DefuseMode::setManagers(DisplayManager* d, SoundManager* s) {
@@ -57,14 +71,12 @@ void DefuseMode::handleInput(int button) {
     if (button >= 0 && button <= 9) {
         if (codePosition < 4) {
             inputCode[codePosition++] = button;
-            sound->play(SOUND_BUTTON_PRESS);
         }
         return;
     }
 
     if (button == 10) { // * = clear
         codePosition = 0;
-        sound->play(SOUND_BEEP);
         return;
     }
 
@@ -72,8 +84,6 @@ void DefuseMode::handleInput(int button) {
         bool correct = true;
 
         if (codePosition < 4) {
-            sound->play(SOUND_ERROR);
-            Serial.println("Code too short.");
             codePosition = 0;
             return;
         }
@@ -91,19 +101,16 @@ void DefuseMode::handleInput(int button) {
             if (state == WAITING_TO_ARM) {
                 state = ARMED;
                 startTime = millis();
-                sound->play(SOUND_GAME_START);
-                Serial.println("Bomb armed!");
+
+        
             } else if (state == ARMED) {
                 state = WAITING_TO_ARM;
-                sound->play(SOUND_DEFUSED);
+
                 display->showGameOver(true);  // Victory
-                Serial.println("Bomb defused!");
+
                 delay(5000);
                 reset();
             }
-        } else {
-            sound->play(SOUND_ERROR);
-            Serial.println("Incorrect code!");
         }
 
         codePosition = 0;
@@ -261,7 +268,6 @@ void DominationMode::updateCapture()
     // Only update capture if a button is being held
     if (!redButtonHeld && !greenButtonHeld)
     {
-        Serial.println("No buttons held, stopping capture");
         // No button held, don't progress capture
         return;
     }
@@ -270,7 +276,6 @@ void DominationMode::updateCapture()
     if ((redButtonHeld && currentOwner == RED_TEAM) ||
         (greenButtonHeld && currentOwner == GREEN_TEAM))
     {
-        Serial.println("Trying to capture already owned point");
         return;
     }
 
@@ -284,16 +289,9 @@ void DominationMode::updateCapture()
         int oldProgress = captureProgress;
         captureProgress = (int)(captureDuration * 100 / DOM_CAPTURE_TIME);
 
-        if (captureProgress != oldProgress)
-        {
-
-            Serial.print(captureProgress);
-        }
-
         // Check if capture complete
         if (captureProgress >= 100)
         {
-            Serial.println("Capture complete!");
             captureProgress = 100;
             currentOwner = capturingTeam;
             captureStartTime = 0; // Reset capture timer
@@ -405,7 +403,6 @@ void DominationMode::updateButtonStates(bool redPressed, bool greenPressed)
         if (captureStartTime == 0 || capturingTeam != RED_TEAM)
         { // ← CRITICAL CHANGE: check if capture not started
             // Start new capture
-            Serial.println("Starting RED capture");
             captureStartTime = millis();
             capturingTeam = RED_TEAM;
         }
@@ -417,7 +414,6 @@ void DominationMode::updateButtonStates(bool redPressed, bool greenPressed)
         if (captureStartTime == 0 || capturingTeam != GREEN_TEAM)
         { // ← CRITICAL CHANGE: check if capture not started
             // Start new capture
-            Serial.println("Starting GREEN capture");
             captureStartTime = millis();
             capturingTeam = GREEN_TEAM;
         }
@@ -428,8 +424,6 @@ void DominationMode::updateButtonStates(bool redPressed, bool greenPressed)
         // No buttons held or trying to capture already-owned point
         if (captureProgress > 0 && captureProgress < 100)
         {
-            // Reset partial capture
-            Serial.println("Resetting partial capture");
             captureProgress = 0;
             captureStartTime = 0;
         }

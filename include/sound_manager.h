@@ -6,6 +6,13 @@
 #include <DFRobotDFPlayerMini.h>
 #include <SoftwareSerial.h>
 
+#define planted_sound '00.wav';
+#define defused_sound '01.wav';
+#define bep_keypad_sound '02.wav';
+#define bep_bomb_sound '03.wav';
+
+
+
 // Sound effect definitions are already in config.h
 
 class SoundManager {
@@ -17,11 +24,12 @@ private:
 
 public:
     SoundManager();
-    void init();
+    bool init();
     void play(uint8_t sound);
     void playWithVolume(uint8_t sound, uint8_t volume);
     void setVolume(uint8_t volume);
     uint8_t getVolume();
+    void playBeepAd(uint8_t track);
     void stop();
 };
 

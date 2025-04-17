@@ -36,6 +36,7 @@ private:
   int codePosition;
   DisplayManager* display;
   SoundManager* sound;
+  unsigned long lastBeepTime = 0;
 
 public:
   DefuseMode();
